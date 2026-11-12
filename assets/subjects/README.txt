@@ -1,0 +1,1 @@
+Ixtiyoriy: fan rasmlari. Fayl nomi: math.jpg, physics.jpg, literature.jpg, history.jpg, biology.jpg, chemistry.jpg, mothertongue.jpg, informatics.jpg, personal.jpg (png/webp ham mumkin). Rasm bo'lmasa, ikonka ko'rsatiladi.

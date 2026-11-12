@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aktivatsiya kodi yaratish</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 480px; margin: 0 auto; padding: 16px; background: #f4f5fb; color: #1b1b1f; }
+  h1 { font-size: 20px; }
+  label { display: block; margin: 14px 0 4px; font-weight: 600; font-size: 14px; }
+  input { width: 100%; box-sizing: border-box; padding: 12px; font-size: 16px; border: 1px solid #b6b9c9; border-radius: 8px; }
+  button { margin-top: 16px; width: 100%; padding: 14px; font-size: 17px; border: 0; border-radius: 10px; background: #3f51b5; color: #fff; }
+  button.secondary { background: #e3e5f3; color: #1b1b1f; margin-top: 8px; }
+  #out { margin-top: 18px; padding: 16px; background: #fff; border-radius: 10px; font-size: 20px; font-weight: 700; letter-spacing: 1px; word-break: break-all; display: none; }
+  .hint { font-size: 13px; color: #555; margin-top: 4px; }
+  ul { padding-left: 18px; font-size: 14px; }
+</style>
+</head>
+<body>
+<h1>Aktivatsiya kodi yaratish</h1>
+
+<label for="secret">Maxfiy so'z (GitHub'dagi ACTIVATION_SECRET bilan bir xil)</label>
+<input id="secret" type="password" autocomplete="off">
+<div class="hint">Shu telefon/kompyuterda eslab qolinadi.</div>
+
+<label for="dev">Qurilma ID (o'quvchi yuboradi)</label>
+<input id="dev" type="text" autocapitalize="characters" autocomplete="off" placeholder="K7M2QX9A">
+
+<label for="days">Necha kunlik</label>
+<input id="days" type="number" value="30" min="1" max="999">
+
+<button id="go">Kod yaratish</button>
+<div id="out"></div>
+<button id="copy" class="secondary" style="display:none">Nusxalash</button>
+
+<h2 style="font-size:16px;margin-top:28px">Oxirgi kodlar</h2>
+<ul id="log"></ul>
+
+<script>
+// ---- SHA-256 va HMAC (tashqi kutubxonasiz, har qanday brauzerda ishlaydi) ----
+var K = [
+0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+
+function utf8(str) {
+  var out = [];
+  var s = unescape(encodeURIComponent(str));
+  for (var i = 0; i < s.length; i++) out.push(s.charCodeAt(i));
+  return out;
+}
+
+function sha256(msg) {
+  var H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  var bytes = msg.slice();
+  var bitLen = msg.length * 8;
+  bytes.push(0x80);
+  while (bytes.length % 64 !== 56) bytes.push(0);
+  var hi = Math.floor(bitLen / 4294967296), lo = bitLen >>> 0;
+  bytes.push((hi >>> 24) & 255, (hi >>> 16) & 255, (hi >>> 8) & 255, hi & 255,
+             (lo >>> 24) & 255, (lo >>> 16) & 255, (lo >>> 8) & 255, lo & 255);
+  var w = new Array(64);
+  for (var off = 0; off < bytes.length; off += 64) {
+    for (var i = 0; i < 16; i++) {
+      w[i] = ((bytes[off + 4*i] << 24) | (bytes[off + 4*i + 1] << 16) | (bytes[off + 4*i + 2] << 8) | bytes[off + 4*i + 3]) | 0;
+    }
+    for (var i = 16; i < 64; i++) {
+      var s0 = ((w[i-15] >>> 7) | (w[i-15] << 25)) ^ ((w[i-15] >>> 18) | (w[i-15] << 14)) ^ (w[i-15] >>> 3);
+      var s1 = ((w[i-2] >>> 17) | (w[i-2] << 15)) ^ ((w[i-2] >>> 19) | (w[i-2] << 13)) ^ (w[i-2] >>> 10);
+      w[i] = (w[i-16] + s0 + w[i-7] + s1) | 0;
+    }
+    var a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+    for (var i = 0; i < 64; i++) {
+      var S1 = ((e >>> 6) | (e << 26)) ^ ((e >>> 11) | (e << 21)) ^ ((e >>> 25) | (e << 7));
+      var ch = (e & f) ^ (~e & g);
+      var t1 = (h + S1 + ch + K[i] + w[i]) | 0;
+      var S0 = ((a >>> 2) | (a << 30)) ^ ((a >>> 13) | (a << 19)) ^ ((a >>> 22) | (a << 10));
+      var maj = (a & b) ^ (a & c) ^ (b & c);
+      var t2 = (S0 + maj) | 0;
+      h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+    }
+    H[0] = (H[0] + a) | 0; H[1] = (H[1] + b) | 0; H[2] = (H[2] + c) | 0; H[3] = (H[3] + d) | 0;
+    H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g) | 0; H[7] = (H[7] + h) | 0;
+  }
+  var out = [];
+  for (var i = 0; i < 8; i++) out.push((H[i] >>> 24) & 255, (H[i] >>> 16) & 255, (H[i] >>> 8) & 255, H[i] & 255);
+  return out;
+}
+
+function hmacSha256(keyBytes, msgBytes) {
+  var key = keyBytes.length > 64 ? sha256(keyBytes) : keyBytes.slice();
+  while (key.length < 64) key.push(0);
+  var ipad = [], opad = [];
+  for (var i = 0; i < 64; i++) { ipad.push(key[i] ^ 0x36); opad.push(key[i] ^ 0x5c); }
+  return sha256(opad.concat(sha256(ipad.concat(msgBytes))));
+}
+
+function toHex(bytes) {
+  return bytes.map(function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+}
+
+var ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+function makeCode(secret, deviceId, days, serial) {
+  var dev = deviceId.trim().toUpperCase();
+  if (!serial) {
+    serial = '';
+    var arr = new Uint8Array(4);
+    (window.crypto || window.msCrypto).getRandomValues(arr);
+    for (var i = 0; i < 4; i++) serial += ALPHABET[arr[i] % ALPHABET.length];
+  }
+  var payload = dev + '|' + days + '|' + serial;
+  var sig = toHex(hmacSha256(utf8(secret), utf8(payload))).slice(0, 10).toUpperCase();
+  return dev + '-' + ('000' + days).slice(-3) + '-' + serial + '-' + sig;
+}
+
+// ---- Interfeys ----
+if (typeof document !== 'undefined') {
+  var $ = function (id) { return document.getElementById(id); };
+  try { $('secret').value = localStorage.getItem('secret') || ''; } catch (e) {}
+
+  function renderLog() {
+    var list = [];
+    try { list = JSON.parse(localStorage.getItem('log') || '[]'); } catch (e) {}
+    $('log').innerHTML = list.map(function (x) { return '<li>' + x + '</li>'; }).join('');
+  }
+  renderLog();
+
+  $('go').onclick = function () {
+    var secret = $('secret').value;
+    var dev = $('dev').value.trim();
+    var days = parseInt($('days').value, 10);
+    if (!secret || !dev || !(days > 0 && days < 1000)) { alert("Maxfiy so'z, Qurilma ID va kunni to'ldiring"); return; }
+    try { localStorage.setItem('secret', secret); } catch (e) {}
+    var code = makeCode(secret, dev, days);
+    $('out').style.display = 'block';
+    $('out').textContent = code;
+    $('copy').style.display = 'block';
+    try {
+      var list = JSON.parse(localStorage.getItem('log') || '[]');
+      list.unshift(code + ' (' + new Date().toLocaleDateString() + ')');
+      localStorage.setItem('log', JSON.stringify(list.slice(0, 30)));
+      renderLog();
+    } catch (e) {}
+  };
+
+  $('copy').onclick = function () {
+    var t = $('out').textContent;
+    if (navigator.clipboard) { navigator.clipboard.writeText(t); }
+    else { var r = document.createRange(); r.selectNode($('out')); getSelection().removeAllRanges(); getSelection().addRange(r); document.execCommand('copy'); }
+    $('copy').textContent = 'Nusxalandi ✓';
+    setTimeout(function () { $('copy').textContent = 'Nusxalash'; }, 1500);
+  };
+}
+</script>
+</body>
+</html>

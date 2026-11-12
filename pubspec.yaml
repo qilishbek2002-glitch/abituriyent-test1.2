@@ -1,0 +1,43 @@
+name: abituriyent_test
+description: Abituriyentlar uchun PDF kitobdan test tuzuvchi ilova.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  shared_preferences: ^2.3.0
+  path_provider: ^2.1.0
+  url_launcher: ^6.3.0
+  file_selector: ^1.0.3
+  crypto: ^3.0.3
+  syncfusion_flutter_pdf: ">=27.1.48 <99.0.0"
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/subjects/
+    - assets/books/math/textbooks/
+    - assets/books/math/materials/
+    - assets/books/physics/textbooks/
+    - assets/books/physics/materials/
+    - assets/books/literature/textbooks/
+    - assets/books/literature/materials/
+    - assets/books/history/textbooks/
+    - assets/books/history/materials/
+    - assets/books/biology/textbooks/
+    - assets/books/biology/materials/
+    - assets/books/chemistry/textbooks/
+    - assets/books/chemistry/materials/
+    - assets/books/mothertongue/textbooks/
+    - assets/books/mothertongue/materials/
+    - assets/books/informatics/textbooks/
+    - assets/books/informatics/materials/
